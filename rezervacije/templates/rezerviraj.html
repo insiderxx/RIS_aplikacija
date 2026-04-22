@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="row justify-content-center">
+<div class="col-md-6">
+    <div class="card shadow">
+        <div class="card-header" style="background:#1a5c2a; color:white;">
+            <h5 class="mb-0">🎾 Rezervacija termina</h5>
+        </div>
+        <div class="card-body">
+
+            <!-- Info o terminu -->
+            <div class="alert alert-success">
+                <strong>{{ igrisca.ime }}</strong> |
+                {{ datum|date:'l, d. F Y' }} |
+                {{ ura }} – {{ ura_konec }}
+            </div>
+
+            <form method="post" id="rezForm">
+                {% csrf_token %}
+
+                <!-- Trener -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">👨‍🏫 Najemi trenerja (opcijsko)</label>
+                    {{ form.trener }}
+                </div>
+
+                <!-- Oprema s cenami -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">🎾 Najemi opremo (opcijsko)</label>
+                    <div class="border rounded p-3">
+                        {% for checkbox in form.oprema %}
+                        <div class="form-check d-flex justify-content-between align-items-center py-1">
+                            <div>
+                                {{ checkbox.tag }}
+                                <label class="form-check-label ms-2" for="{{ checkbox.id_for_label }}">
+                                    {{ checkbox.choice_label }}
+                                </label>
+                            </div>
+                            {% for oprema in oprema_list %}
+                                {% if oprema.ime == checkbox.choice_label %}
+                                    <span class="badge bg-success">{{ oprema.cena_ura }}€/uro</span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% empty %}
+                            <p class="text-muted mb-0">Ni razpoložljive opreme.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Skupna cena (dinamično) -->
+                <div class="alert alert-info" id="cenaSummary">
+                    <strong>Skupna cena:</strong> izberite opremo za izračun
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success">✅ Potrdi rezervacijo</button>
+                    <a href="/?datum={{ datum|date:'Y-m-d' }}" class="btn btn-outline-secondary">Prekliči</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+// Cene opreme iz Django
+const cene = {
+    {% for o in oprema_list %}
+        "{{ o.id }}": {{ o.cena_ura }},
+    {% endfor %}
+};
+
+function izracunajCeno() {
+    const checkboxi = document.querySelectorAll('input[name="oprema"]:checked');
+    let skupaj = 0;
+    checkboxi.forEach(cb => {
+        skupaj += cene[cb.value] || 0;
+    });
+    const el = document.getElementById('cenaSummary');
+    el.innerHTML = `<strong>Skupna cena opreme:</strong> ${skupaj.toFixed(2)}€/uro`;
+}
+
+document.querySelectorAll('input[name="oprema"]').forEach(cb => {
+    cb.addEventListener('change', izracunajCeno);
+});
+</script>
+
+{% endblock %}

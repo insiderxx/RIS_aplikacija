@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h4 class="mb-4">Moje rezervacije</h4>
+
+{% if rezervacije %}
+<div class="table-responsive">
+<table class="table table-bordered table-hover">
+    <thead style="background:#1a5c2a; color:white;">
+        <tr>
+            <th>Datum</th>
+            <th>Čas</th>
+            <th>Igrišče</th>
+            <th>Trener</th>
+            <th>Oprema</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in rezervacije %}
+        <tr>
+            <td>{{ r.datum|date:'d.m.Y' }}</td>
+            <td>{{ r.ura_zacetek|time:'H:i' }} – {{ r.ura_konec|time:'H:i' }}</td>
+            <td>{{ r.igrisca.ime }}</td>
+            <td>{{ r.trener.get_full_name|default:'–' }}</td>
+            <td>
+                {% for o in r.oprema.all %}
+                    <span class="badge bg-secondary">{{ o.ime }}</span>
+                {% empty %}–
+                {% endfor %}
+            </td>
+            <td>
+                {% if r.status == 'potrjena' %}
+                    <span class="badge bg-success">Potrjena</span>
+                {% elif r.status == 'cakajoca' %}
+                    <span class="badge bg-warning text-dark">Čaka potrditev</span>
+                {% endif %}
+            </td>
+            <td>
+                <a href="{% url 'preklic' r.id %}"
+                   class="btn btn-outline-danger btn-sm"
+                   onclick="return confirm('Želite preklicati?')">Prekliči</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+    <p class="text-muted">Nimate še nobene rezervacije.
+        <a href="{% url 'grid' %}">Rezerviraj termin</a>
+    </p>
+{% endif %}
+
+{% endblock %}

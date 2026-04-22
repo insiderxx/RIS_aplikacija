@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h4 class="mb-3">Razpoložljivi termini — {{ datum|date:'l, d. F Y' }}</h4>
+
+<!-- Koledar 14 dni -->
+<div class="d-flex flex-wrap gap-2 mb-4">
+    {% for dan in koledar %}
+        <a href="?datum={{ dan|date:'Y-m-d' }}"
+           class="btn btn-outline-success btn-sm datum-btn {% if dan == datum %}active{% endif %}">
+            {{ dan|date:'D d.m' }}
+        </a>
+    {% endfor %}
+</div>
+
+<!-- Legenda -->
+<div class="d-flex gap-3 mb-3 flex-wrap">
+    <span class="px-3 py-1 rounded" style="background:#d4edda;color:#155724;">🟢 Prosto</span>
+    <span class="px-3 py-1 rounded" style="background:#f8d7da;color:#721c24;">🔴 Zasedeno</span>
+    <span class="px-3 py-1 rounded" style="background:#cce5ff;color:#004085;">🔵 Moja rezervacija</span>
+    <span class="px-3 py-1 rounded" style="background:#fff3cd;color:#856404;">🟡 Čaka potrditev</span>
+</div>
+
+<!-- Grid -->
+<div class="table-responsive">
+<table class="table table-bordered grid-table">
+    <thead>
+        <tr>
+            <th style="width:80px">Ura</th>
+            {% for ig in igrisca %}
+                <th>{{ ig.ime }}<br><small class="fw-normal opacity-75">{{ ig.get_povrsina_display }}</small></th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for vrstica in grid_rows %}
+        <tr>
+            <td class="fw-bold">{{ vrstica.ura_str }}</td>
+            {% for celica in vrstica.celice %}
+                {% if celica.stanje == 'prosto' %}
+                    {% if user.is_authenticated %}
+                        <td class="cell-prosto"
+                            onclick="window.location='{% url 'rezerviraj' celica.igrisca.id datum|date:'Y-m-d' celica.ura_str %}'">
+                            Rezerviraj
+                        </td>
+                    {% else %}
+                        <td class="cell-prosto"
+                            onclick="window.location='{% url 'prijava' %}'">
+                            Prijava
+                        </td>
+                    {% endif %}
+                {% elif celica.stanje == 'moje' %}
+                    <td class="cell-moje">
+                        Moje ✓
+                    </td>
+                {% elif celica.stanje == 'cakajoca' %}
+                    <td class="cell-cakajoca">
+                        Čaka...
+                    </td>
+                {% else %}
+                    <td class="cell-zasedeno">
+                        Zasedeno
+                    </td>
+                {% endif %}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}
