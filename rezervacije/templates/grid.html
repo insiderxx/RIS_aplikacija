@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<h4 class="mb-3">Razpoložljivi termini — {{ datum|date:'l, d. F Y' }}</h4>
+<h4 class="mb-3 fw-700" style="color:#1a5c2a; font-weight:700;">Razpoložljivi termini — {{ datum|date:'l, d. F Y' }}</h4>
 
 <!-- Koledar 14 dni -->
 <div class="d-flex flex-wrap gap-2 mb-4">
@@ -14,11 +14,19 @@
 </div>
 
 <!-- Legenda -->
-<div class="d-flex gap-3 mb-3 flex-wrap">
-    <span class="px-3 py-1 rounded" style="background:#d4edda;color:#155724;">🟢 Prosto</span>
-    <span class="px-3 py-1 rounded" style="background:#f8d7da;color:#721c24;">🔴 Zasedeno</span>
-    <span class="px-3 py-1 rounded" style="background:#cce5ff;color:#004085;">🔵 Moja rezervacija</span>
-    <span class="px-3 py-1 rounded" style="background:#fff3cd;color:#856404;">🟡 Čaka potrditev</span>
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <span class="legenda-pill" style="background:#d1f5d3;">
+        <span class="legenda-dot" style="background:#28a745;"></span> Prosto
+    </span>
+    <span class="legenda-pill" style="background:#fde8e8;">
+        <span class="legenda-dot" style="background:#dc3545;"></span> Zasedeno
+    </span>
+    <span class="legenda-pill" style="background:#dbeafe;">
+        <span class="legenda-dot" style="background:#3b82f6;"></span> Moja rezervacija
+    </span>
+    <span class="legenda-pill" style="background:#fff3cd;">
+        <span class="legenda-dot" style="background:#f59e0b;"></span> Čaka potrditev
+    </span>
 </div>
 
 <!-- Grid -->
@@ -26,7 +34,7 @@
 <table class="table table-bordered grid-table">
     <thead>
         <tr>
-            <th style="width:80px">Ura</th>
+            <th style="width:70px;">Ura</th>
             {% for ig in igrisca %}
                 <th>{{ ig.ime }}<br><small class="fw-normal opacity-75">{{ ig.get_povrsina_display }}</small></th>
             {% endfor %}
@@ -35,7 +43,7 @@
     <tbody>
         {% for vrstica in grid_rows %}
         <tr>
-            <td class="fw-bold">{{ vrstica.ura_str }}</td>
+            <td class="ura-col">{{ vrstica.ura_str }}</td>
             {% for celica in vrstica.celice %}
                 {% if celica.stanje == 'prosto' %}
                     {% if user.is_authenticated %}
@@ -50,17 +58,11 @@
                         </td>
                     {% endif %}
                 {% elif celica.stanje == 'moje' %}
-                    <td class="cell-moje">
-                        Moje ✓
-                    </td>
+                    <td class="cell-moje">Moje ✓</td>
                 {% elif celica.stanje == 'cakajoca' %}
-                    <td class="cell-cakajoca">
-                        Čaka...
-                    </td>
+                    <td class="cell-cakajoca">Čaka...</td>
                 {% else %}
-                    <td class="cell-zasedeno">
-                        Zasedeno
-                    </td>
+                    <td class="cell-zasedeno">Zasedeno</td>
                 {% endif %}
             {% endfor %}
         </tr>

@@ -38,10 +38,10 @@
                     <td class="d-flex gap-2">
                         <a href="{% url 'potrdi' r.id %}"
                            class="btn btn-success btn-sm"
-                           onclick="return confirm('Potrdiš ta trening?')">✅ Potrdi</a>
+                           onclick="return confirm('Želite potrditi termin?')">✅ Potrdi</a>
                         <a href="{% url 'zavrni' r.id %}"
                            class="btn btn-danger btn-sm"
-                           onclick="return confirm('Zavrneš ta trening?')">❌ Zavrni</a>
+                           onclick="return confirm('Želite zavrniti termin?')">❌ Zavrni</a>
                     </td>
                 </tr>
                 {% endfor %}
