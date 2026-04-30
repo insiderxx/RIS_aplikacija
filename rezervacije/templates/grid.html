@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<h4 class="mb-3 fw-700" style="color:#1a5c2a; font-weight:700;">Razpoložljivi termini — {{ datum|date:'l, d. F Y' }}</h4>
+<h4 class="mb-3" style="color:#1a5c2a; font-weight:700;">Razpoložljivi termini — {{ datum|date:'l, d. F Y' }}</h4>
 
 <!-- Koledar 14 dni -->
 <div class="d-flex flex-wrap gap-2 mb-4">
@@ -27,6 +27,9 @@
     <span class="legenda-pill" style="background:#fff3cd;">
         <span class="legenda-dot" style="background:#f59e0b;"></span> Čaka potrditev
     </span>
+    <span class="legenda-pill" style="background:#e9ecef;">
+        <span class="legenda-dot" style="background:#adb5bd;"></span> Preteklost
+    </span>
 </div>
 
 <!-- Grid -->
@@ -45,7 +48,9 @@
         <tr>
             <td class="ura-col">{{ vrstica.ura_str }}</td>
             {% for celica in vrstica.celice %}
-                {% if celica.stanje == 'prosto' %}
+                {% if celica.stanje == 'preteklost' %}
+                    <td class="cell-preteklost">–</td>
+                {% elif celica.stanje == 'prosto' %}
                     {% if user.is_authenticated %}
                         <td class="cell-prosto"
                             onclick="window.location='{% url 'rezerviraj' celica.igrisca.id datum|date:'Y-m-d' celica.ura_str %}'">
@@ -59,6 +64,11 @@
                     {% endif %}
                 {% elif celica.stanje == 'moje' %}
                     <td class="cell-moje">Moje ✓</td>
+                {% elif celica.stanje == 'trener_caka' %}
+                    <td class="cell-trener-caka"
+                        onclick="window.location='{% url 'trener_panel' %}'">
+                        ⏳ Potrdi
+                    </td>
                 {% elif celica.stanje == 'cakajoca' %}
                     <td class="cell-cakajoca">Čaka...</td>
                 {% else %}

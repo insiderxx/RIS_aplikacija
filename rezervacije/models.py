@@ -28,6 +28,7 @@ class Igrisca(models.Model):
     ime       = models.CharField(max_length=50)          # npr. "Igrišče 1"
     povrsina  = models.CharField(max_length=20, choices=Povrsina.choices, default=Povrsina.TRDA)
     aktivno   = models.BooleanField(default=True)        # admin lahko deaktivira
+    cena_ura = models.DecimalField(max_digits=6, decimal_places=2, default=10.00)
 
     def __str__(self):
         return self.ime
@@ -60,7 +61,7 @@ class Rezervacija(models.Model):
     status     = models.CharField(max_length=20, choices=Status.choices, default=Status.POTRJENA)
     ustvarjena = models.DateTimeField(auto_now_add=True)
 
-    # Opcijsko — najem trenerja in opreme
+    # najem trenerja in opreme
     trener     = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='treningi', limit_choices_to={'role': 'trener'}

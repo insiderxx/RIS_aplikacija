@@ -3,9 +3,21 @@ from django.contrib.auth.forms import UserCreationForm
 from .models import Rezervacija, User, Oprema
 
 class RezervacijaForm(forms.ModelForm):
+    TRAJANJE_CHOICES = [
+        (1, '1 ura'),
+        (2, '2 uri'),
+        (3, '3 ure'),
+    ]
+    trajanje = forms.ChoiceField(
+        choices=TRAJANJE_CHOICES,
+        initial=1,
+        label='Trajanje',
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
     class Meta:
         model = Rezervacija
-        fields = ['trener', 'oprema']
+        fields = ['trajanje', 'trener', 'oprema']
         widgets = {
             'oprema': forms.CheckboxSelectMultiple(),
             'trener': forms.Select(attrs={'class': 'form-select'}),
@@ -17,12 +29,11 @@ class RezervacijaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Pokaži samo trenerje
         self.fields['trener'].queryset = User.objects.filter(role='trener')
         self.fields['trener'].empty_label = 'Brez trenerja'
         self.fields['trener'].required = False
-        # Pokaži samo aktivno opremo z ceno
         self.fields['oprema'].queryset = Oprema.objects.filter(aktivno=True)
+        self.fields['oprema'].required = False
 
 class RegistracijaForm(UserCreationForm):
     email = forms.EmailField(required=True)

@@ -12,4 +12,5 @@ urlpatterns = [
     path('trener/', views.trener_panel, name='trener_panel'),
     path('trener/potrdi/<int:rezervacija_id>/', views.potrdi_trening, name='potrdi'),
     path('trener/zavrni/<int:rezervacija_id>/', views.zavrni_trening, name='zavrni'),
+    path('cenik/', views.cenik, name='cenik'),
 ]

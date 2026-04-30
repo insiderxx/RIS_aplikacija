@@ -2,13 +2,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from datetime import date, timedelta, time
 import datetime
 from .models import Igrisca, Rezervacija, Oprema, User
 from .forms import RezervacijaForm, RegistracijaForm
 
-# Termini od 8:00 do 21:00 vsako uro
 TERMINI = [time(h, 0) for h in range(8, 22)]
+
 
 def grid(request):
     datum_str = request.GET.get('datum')
@@ -23,26 +24,40 @@ def grid(request):
         status__in=['potrjena', 'cakajoca']
     ).select_related('uporabnik', 'igrisca')
 
-    # Slovar: {(igrisca_id, 'HH:MM'): rezervacija}
     zasedenost = {}
     for r in rezervacije:
-        zasedenost[(r.igrisca_id, r.ura_zacetek.strftime('%H:%M'))] = r
+        # Označi vse ure ki jih rezervacija pokriva
+        zacetek = datetime.datetime.combine(datum, r.ura_zacetek)
+        konec = datetime.datetime.combine(datum, r.ura_konec)
+        trenutna = zacetek
+        while trenutna < konec:
+            zasedenost[(r.igrisca_id, trenutna.strftime('%H:%M'))] = r
+            trenutna += timedelta(hours=1)
 
-    # Zgradimo grid kot seznam vrstic — template bo samo iteriral
+    zdaj = datetime.datetime.now()
+
     grid_rows = []
     for termin in TERMINI:
         ura_str = termin.strftime('%H:%M')
+        termin_dt = datetime.datetime.combine(datum, termin)
+        je_preteklost = termin_dt < zdaj
+
         celice = []
         for ig in igrisca_list:
             rez = zasedenost.get((ig.id, ura_str))
-            if rez is None:
+            if je_preteklost:
+                stanje = 'preteklost'
+            elif rez is None:
                 stanje = 'prosto'
             elif request.user.is_authenticated and rez.uporabnik == request.user:
                 stanje = 'moje'
             elif rez.status == 'cakajoca':
                 stanje = 'cakajoca'
+                if request.user.is_authenticated and request.user.je_trener() and rez.trener == request.user:
+                    stanje = 'trener_caka'
             else:
                 stanje = 'zasedeno'
+
             celice.append({
                 'igrisca': ig,
                 'ura_str': ura_str,
@@ -60,46 +75,76 @@ def grid(request):
         'koledar': koledar,
     }
     return render(request, 'grid.html', context)
+
+
 @login_required
 def rezerviraj(request, igrisca_id, datum, ura):
     igrisca = get_object_or_404(Igrisca, id=igrisca_id)
     datum_obj = date.fromisoformat(datum)
     ura_obj = datetime.datetime.strptime(ura, '%H:%M').time()
-    ura_konec = (datetime.datetime.combine(datum_obj, ura_obj) + timedelta(hours=1)).time()
 
-    # Preveri če je termin že zaseden
-    if Rezervacija.objects.filter(igrisca=igrisca, datum=datum_obj, ura_zacetek=ura_obj,
-                                   status__in=['potrjena', 'cakajoca']).exists():
-        messages.error(request, 'Ta termin je žal že zaseden.')
+    # prepreci rezervacijo v preteklosti
+    if datetime.datetime.combine(datum_obj, ura_obj) < datetime.datetime.now():
+        messages.error(request, 'Ne moreš rezervirati termina v preteklosti.')
         return redirect(f'/?datum={datum}')
 
     if request.method == 'POST':
         form = RezervacijaForm(request.POST)
         if form.is_valid():
-            rez = form.save(commit=False)
-            rez.uporabnik = request.user
-            rez.igrisca = igrisca
-            rez.datum = datum_obj
-            rez.ura_zacetek = ura_obj
-            rez.ura_konec = ura_konec
-            # Če je izbran trener, status čaka na potrditev
-            if rez.trener:
-                rez.status = Rezervacija.Status.CAKAJOCA
+            trajanje = int(form.cleaned_data['trajanje'])
+            ura_konec = (datetime.datetime.combine(datum_obj, ura_obj) + timedelta(hours=trajanje)).time()
+
+            # preveri vse ure ki jih rezervacija pokriva
+            zasedene = []
+            for i in range(trajanje):
+                ura_preverba = (datetime.datetime.combine(datum_obj, ura_obj) + timedelta(hours=i)).time()
+                if Rezervacija.objects.filter(
+                    igrisca=igrisca,
+                    datum=datum_obj,
+                    ura_zacetek=ura_preverba,
+                    status__in=['potrjena', 'cakajoca']
+                ).exists():
+                    zasedene.append(ura_preverba.strftime('%H:%M'))
+
+            # preveri tudi z zasedenostjo
+            rezervacije_ta_dan = Rezervacija.objects.filter(
+                igrisca=igrisca,
+                datum=datum_obj,
+                status__in=['potrjena', 'cakajoca']
+            )
+            for r in rezervacije_ta_dan:
+                zacetek = datetime.datetime.combine(datum_obj, r.ura_zacetek)
+                konec = datetime.datetime.combine(datum_obj, r.ura_konec)
+                for i in range(trajanje):
+                    preverba_dt = datetime.datetime.combine(datum_obj, ura_obj) + timedelta(hours=i)
+                    if zacetek <= preverba_dt < konec:
+                        zasedene.append(preverba_dt.strftime('%H:%M'))
+
+            if zasedene:
+                messages.error(request, f'Naslednje ure so zasedene: {", ".join(set(zasedene))}')
             else:
-                rez.status = Rezervacija.Status.POTRJENA
-            rez.save()
-            form.save_m2m()
-            messages.success(request, 'Rezervacija uspešna! 🎾')
-            return redirect(f'/?datum={datum}')
+                rez = form.save(commit=False)
+                rez.uporabnik = request.user
+                rez.igrisca = igrisca
+                rez.datum = datum_obj
+                rez.ura_zacetek = ura_obj
+                rez.ura_konec = ura_konec
+                rez.status = Rezervacija.Status.CAKAJOCA if rez.trener else Rezervacija.Status.POTRJENA
+                rez.save()
+                form.save_m2m()
+                messages.success(request, f'Rezervacija uspešna! 🎾 ({trajanje} {"ura" if trajanje == 1 else "uri" if trajanje == 2 else "ure"})')
+                return redirect(f'/?datum={datum}')
     else:
         form = RezervacijaForm()
+
+    ura_konec_privzeto = (datetime.datetime.combine(datum_obj, ura_obj) + timedelta(hours=1)).time()
 
     context = {
         'form': form,
         'igrisca': igrisca,
         'datum': datum_obj,
         'ura': ura,
-        'ura_konec': ura_konec,
+        'ura_konec': ura_konec_privzeto,
         'oprema_list': Oprema.objects.filter(aktivno=True),
     }
     return render(request, 'rezerviraj.html', context)
@@ -151,30 +196,27 @@ def registracija(request):
         form = RegistracijaForm()
     return render(request, 'registracija.html', {'form': form})
 
-from django.core.exceptions import PermissionDenied
+
+def cenik(request):
+    igrisca = Igrisca.objects.filter(aktivno=True)
+    oprema = Oprema.objects.filter(aktivno=True)
+    return render(request, 'cenik.html', {'igrisca': igrisca, 'oprema': oprema})
+
 
 @login_required
 def trener_panel(request):
     if not request.user.je_trener():
         raise PermissionDenied
-
-    # Čakajoči termini — trener mora potrditi ali zavrniti
     cakajoci = Rezervacija.objects.filter(
         trener=request.user,
         status='cakajoca'
     ).select_related('uporabnik', 'igrisca').order_by('datum', 'ura_zacetek')
-
-    # Potrjeni prihodnji termini
     potrjeni = Rezervacija.objects.filter(
         trener=request.user,
         status='potrjena',
         datum__gte=date.today()
     ).select_related('uporabnik', 'igrisca').order_by('datum', 'ura_zacetek')
-
-    return render(request, 'trener_panel.html', {
-        'cakajoci': cakajoci,
-        'potrjeni': potrjeni,
-    })
+    return render(request, 'trener_panel.html', {'cakajoci': cakajoci, 'potrjeni': potrjeni})
 
 
 @login_required

@@ -9,15 +9,20 @@
         </div>
         <div class="card-body">
 
-            <!-- Info o terminu -->
             <div class="alert alert-success">
                 <strong>{{ igrisca.ime }}</strong> |
                 {{ datum|date:'l, d. F Y' }} |
-                {{ ura }} – {{ ura_konec }}
+                od {{ ura }}
             </div>
 
             <form method="post" id="rezForm">
                 {% csrf_token %}
+
+                <!-- Trajanje -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">⏱️ Trajanje</label>
+                    {{ form.trajanje }}
+                </div>
 
                 <!-- Trener -->
                 <div class="mb-4">
@@ -25,7 +30,7 @@
                     {{ form.trener }}
                 </div>
 
-                <!-- Oprema s cenami -->
+                <!-- Oprema -->
                 <div class="mb-4">
                     <label class="form-label fw-bold">🎾 Najemi opremo (opcijsko)</label>
                     <div class="border rounded p-3">
@@ -37,9 +42,9 @@
                                     {{ checkbox.choice_label }}
                                 </label>
                             </div>
-                            {% for oprema in oprema_list %}
-                                {% if oprema.ime == checkbox.choice_label %}
-                                    <span class="badge bg-success">{{ oprema.cena_ura }}€/uro</span>
+                            {% for o in oprema_list %}
+                                {% if o.ime == checkbox.choice_label %}
+                                    <span class="badge bg-success">{{ o.cena_ura }}€/uro</span>
                                 {% endif %}
                             {% endfor %}
                         </div>
@@ -49,9 +54,10 @@
                     </div>
                 </div>
 
-                <!-- Skupna cena (dinamično) -->
-                <div class="alert alert-info" id="cenaSummary">
-                    <strong>Skupna cena:</strong> izberite opremo za izračun
+                <!-- Skupna cena -->
+                <div class="alert alert-info mb-3">
+                    <strong>Skupna cena:</strong>
+                    <span id="cenaText">{{ igrisca.cena_ura }}€</span>
                 </div>
 
                 <div class="d-flex gap-2">
@@ -65,26 +71,31 @@
 </div>
 
 <script>
-// Cene opreme iz Django
+const cenaIgrisca = {{ igrisca.cena_ura }};
 const cene = {
-    {% for o in oprema_list %}
-        "{{ o.id }}": {{ o.cena_ura }},
-    {% endfor %}
+    {% for o in oprema_list %}"{{ o.id }}": {{ o.cena_ura }},{% endfor %}
 };
 
 function izracunajCeno() {
-    const checkboxi = document.querySelectorAll('input[name="oprema"]:checked');
-    let skupaj = 0;
-    checkboxi.forEach(cb => {
-        skupaj += cene[cb.value] || 0;
+    const sel = document.querySelector('select[name="trajanje"]');
+    const trajanje = sel ? parseInt(sel.value) : 1;
+
+    let opremaSkupaj = 0;
+    document.querySelectorAll('input[name="oprema"]:checked').forEach(cb => {
+        opremaSkupaj += cene[cb.value] || 0;
     });
-    const el = document.getElementById('cenaSummary');
-    el.innerHTML = `<strong>Skupna cena opreme:</strong> ${skupaj.toFixed(2)}€/uro`;
+
+    const skupaj = (cenaIgrisca + opremaSkupaj) * trajanje;
+    document.getElementById('cenaText').innerHTML =
+        `<strong>${skupaj.toFixed(2)}€</strong> za ${trajanje} ${trajanje == 1 ? 'uro' : trajanje == 2 ? 'uri' : 'ure'}
+        <small class="text-muted ms-1">(igrišče: ${(cenaIgrisca * trajanje).toFixed(2)}€
+        ${opremaSkupaj > 0 ? '+ oprema: ' + (opremaSkupaj * trajanje).toFixed(2) + '€' : ''})</small>`;
 }
 
-document.querySelectorAll('input[name="oprema"]').forEach(cb => {
-    cb.addEventListener('change', izracunajCeno);
-});
+document.addEventListener('DOMContentLoaded', izracunajCeno);
+document.querySelectorAll('input[name="oprema"]').forEach(cb => cb.addEventListener('change', izracunajCeno));
+const sel = document.querySelector('select[name="trajanje"]');
+if (sel) sel.addEventListener('change', izracunajCeno);
 </script>
 
 {% endblock %}

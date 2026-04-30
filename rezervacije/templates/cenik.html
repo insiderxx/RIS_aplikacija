@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h4 class="mb-4 fw-bold" style="color:#1a5c2a;">💰 Cenik</h4>
+
+<div class="row g-4">
+
+    <!-- Igrišča -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header" style="background: linear-gradient(135deg, #1a5c2a, #2d8a45); color:white;">
+                🎾 Igrišča
+            </div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Igrišče</th>
+                            <th>Podlaga</th>
+                            <th class="text-end">Cena/uro</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ig in igrisca %}
+                        <tr>
+                            <td class="fw-500">{{ ig.ime }}</td>
+                            <td><span class="badge bg-secondary">{{ ig.get_povrsina_display }}</span></td>
+                            <td class="text-end fw-bold" style="color:#1a5c2a;">{{ ig.cena_ura }}€</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Oprema -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header" style="background: linear-gradient(135deg, #1a5c2a, #2d8a45); color:white;">
+                🏸 Oprema za najem
+            </div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Oprema</th>
+                            <th>Na voljo</th>
+                            <th class="text-end">Cena/uro</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for o in oprema %}
+                        <tr>
+                            <td>{{ o.ime }}</td>
+                            <td><span class="badge bg-success">{{ o.kolicina }} kosov</span></td>
+                            <td class="text-end fw-bold" style="color:#1a5c2a;">{{ o.cena_ura }}€</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info -->
+    <div class="col-12">
+        <div class="card" style="border-left: 4px solid #2d8a45;">
+            <div class="card-body">
+                <h6 class="fw-bold mb-2">ℹ️ Informacije</h6>
+                <p class="mb-1 text-muted small">Rezervacije so možne od <strong>8:00 do 22:00</strong>, vsak dan v tednu.</p>
+                <p class="mb-1 text-muted small">Minimalna rezervacija je <strong>1 ura</strong>, možna pa je rezervacija do <strong>3 ure</strong> naenkrat.</p>
+                <p class="mb-0 text-muted small">Rezervacijo lahko prekličete kadarkoli pred začetkom termina.</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
