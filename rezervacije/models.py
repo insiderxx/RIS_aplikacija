@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-# ── UPORABNIKI ────────────────────────────────────────────
+#  UPORABNIKI
 class User(AbstractUser):
     class Role(models.TextChoices):
         UPORABNIK    = 'uporabnik',    'Uporabnik'
@@ -18,14 +18,14 @@ class User(AbstractUser):
         return self.role == self.Role.ADMINISTRATOR
 
 
-# ── IGRIŠČA ───────────────────────────────────────────────
+# IGRIŠČA
 class Igrisca(models.Model):
     class Povrsina(models.TextChoices):
         PESEK  = 'pesek',  'Pesek'
         TRAVA  = 'trava',  'Trava'
         TRDA   = 'trda',   'Trda podlaga'
 
-    ime       = models.CharField(max_length=50)          # npr. "Igrišče 1"
+    ime       = models.CharField(max_length=50)
     povrsina  = models.CharField(max_length=20, choices=Povrsina.choices, default=Povrsina.TRDA)
     aktivno   = models.BooleanField(default=True)        # admin lahko deaktivira
     cena_ura = models.DecimalField(max_digits=6, decimal_places=2, default=10.00)
@@ -34,10 +34,10 @@ class Igrisca(models.Model):
         return self.ime
 
 
-# ── OPREMA ────────────────────────────────────────────────
+# OPREMA
 class Oprema(models.Model):
-    ime        = models.CharField(max_length=100)        # npr. "Lopar Wilson"
-    kolicina   = models.PositiveIntegerField(default=1)  # koliko kosov imamo
+    ime        = models.CharField(max_length=100)
+    kolicina   = models.PositiveIntegerField(default=1)
     cena_ura   = models.DecimalField(max_digits=6, decimal_places=2)
     aktivno    = models.BooleanField(default=True)
 
@@ -45,7 +45,7 @@ class Oprema(models.Model):
         return self.ime
 
 
-# ── REZERVACIJE ───────────────────────────────────────────
+# REZERVACIJE
 class Rezervacija(models.Model):
     class Status(models.TextChoices):
         CAKAJOCA  = 'cakajoca',  'Čakajoča'
@@ -56,8 +56,8 @@ class Rezervacija(models.Model):
     uporabnik  = models.ForeignKey(User, on_delete=models.CASCADE, related_name='rezervacije')
     igrisca    = models.ForeignKey(Igrisca, on_delete=models.CASCADE)
     datum      = models.DateField()
-    ura_zacetek = models.TimeField()                     # npr. 10:00
-    ura_konec   = models.TimeField()                     # npr. 11:00
+    ura_zacetek = models.TimeField()
+    ura_konec   = models.TimeField()
     status     = models.CharField(max_length=20, choices=Status.choices, default=Status.POTRJENA)
     ustvarjena = models.DateTimeField(auto_now_add=True)
 
@@ -69,7 +69,7 @@ class Rezervacija(models.Model):
     oprema     = models.ManyToManyField(Oprema, blank=True)
 
     class Meta:
-        # Prepreči dvojno rezervacijo istega igrišča ob istem času
+        # prepreci dvojno rezervacijo istega igrišča ob istem času
         unique_together = ['igrisca', 'datum', 'ura_zacetek']
 
     def __str__(self):
