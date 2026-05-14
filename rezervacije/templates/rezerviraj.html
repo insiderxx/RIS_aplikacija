@@ -75,6 +75,9 @@ const cenaIgrisca = {{ igrisca.cena_ura }};
 const cene = {
     {% for o in oprema_list %}"{{ o.id }}": {{ o.cena_ura }},{% endfor %}
 };
+const ceneTrenerjev = {
+    {% for t in trenerji %}"{{ t.id }}": {{ t.cena_ura }},{% endfor %}
+};
 
 function izracunajCeno() {
     const sel = document.querySelector('select[name="trajanje"]');
@@ -85,10 +88,15 @@ function izracunajCeno() {
         opremaSkupaj += cene[cb.value] || 0;
     });
 
-    const skupaj = (cenaIgrisca + opremaSkupaj) * trajanje;
+    const trenerSel = document.querySelector('select[name="trener"]');
+    const trenerId = trenerSel ? trenerSel.value : '';
+    const cenaTrener = ceneTrenerjev[trenerId] || 0;
+
+    const skupaj = (cenaIgrisca + opremaSkupaj + cenaTrener) * trajanje;
     document.getElementById('cenaText').innerHTML =
         `<strong>${skupaj.toFixed(2)}€</strong> za ${trajanje} ${trajanje == 1 ? 'uro' : trajanje == 2 ? 'uri' : 'ure'}
         <small class="text-muted ms-1">(igrišče: ${(cenaIgrisca * trajanje).toFixed(2)}€
+        ${cenaTrener > 0 ? '+ trener: ' + (cenaTrener * trajanje).toFixed(2) + '€' : ''}
         ${opremaSkupaj > 0 ? '+ oprema: ' + (opremaSkupaj * trajanje).toFixed(2) + '€' : ''})</small>`;
 }
 
@@ -96,6 +104,8 @@ document.addEventListener('DOMContentLoaded', izracunajCeno);
 document.querySelectorAll('input[name="oprema"]').forEach(cb => cb.addEventListener('change', izracunajCeno));
 const sel = document.querySelector('select[name="trajanje"]');
 if (sel) sel.addEventListener('change', izracunajCeno);
+const trenerSel = document.querySelector('select[name="trener"]');
+if (trenerSel) trenerSel.addEventListener('change', izracunajCeno);
 </script>
 
 {% endblock %}

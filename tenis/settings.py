@@ -125,10 +125,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'rezervacije.User'
 
 import os
-DEBUG = False
+
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+
 ALLOWED_HOSTS = ['*']
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 CSRF_TRUSTED_ORIGINS = ['https://*.railway.app']
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

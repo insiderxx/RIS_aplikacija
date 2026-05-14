@@ -10,6 +10,7 @@ class User(AbstractUser):
 
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.UPORABNIK)
     telefon = models.CharField(max_length=20, blank=True)
+    cena_ura = models.DecimalField(max_digits=6, decimal_places=2, default=45.00)
 
     def je_trener(self):
         return self.role == self.Role.TRENER

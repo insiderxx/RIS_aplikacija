@@ -146,6 +146,7 @@ def rezerviraj(request, igrisca_id, datum, ura):
         'ura': ura,
         'ura_konec': ura_konec_privzeto,
         'oprema_list': Oprema.objects.filter(aktivno=True),
+        'trenerji': User.objects.filter(role='trener'),
     }
     return render(request, 'rezerviraj.html', context)
 
@@ -200,7 +201,8 @@ def registracija(request):
 def cenik(request):
     igrisca = Igrisca.objects.filter(aktivno=True)
     oprema = Oprema.objects.filter(aktivno=True)
-    return render(request, 'cenik.html', {'igrisca': igrisca, 'oprema': oprema})
+    trenerji = User.objects.filter(role='trener')
+    return render(request, 'cenik.html', {'igrisca': igrisca, 'oprema': oprema, 'trenerji': trenerji})
 
 
 @login_required
