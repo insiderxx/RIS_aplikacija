@@ -129,3 +129,6 @@ DEBUG = False
 ALLOWED_HOSTS = ['*']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+CSRF_TRUSTED_ORIGINS = ['https://*.railway.app']
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
